@@ -42,7 +42,7 @@ function RootLayoutNav() {
           router.replace('/welcome');
         }
       } else {
-        if (!inTabs) {
+        if (!inTabs && segments[1] !== 'addProperty' && segments[1] !== 'propertySuccess' && segments[1] !== 'addTenant') {
           router.replace('/(tabs)');
         }
       }

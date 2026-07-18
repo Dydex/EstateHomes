@@ -72,7 +72,7 @@ export default function AddPropertyScreen() {
     //   return;
     // }
     // Route to main app
-    router.replace("/welcome?from=addProperty");
+    router.replace("/propertySuccess");
   };
 
   const renderSelectorModal = () => {
