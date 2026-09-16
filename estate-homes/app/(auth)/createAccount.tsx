@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image } from "expo-image";
 import {router} from 'expo-router';
 import { FontAwesome } from "@expo/vector-icons";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+
+// Expo Go doesn't include the Google Sign-In native module, so only load it in development/production builds
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const googleSignIn: typeof import("@react-native-google-signin/google-signin") | null = isExpoGo
+  ? null
+  : // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@react-native-google-signin/google-signin");
 
 const COUNTRIES = [
   { code: 'US', name: 'United States', flag: '🇺🇸', dialCode: '+1' },
@@ -46,14 +53,20 @@ export default function CreateAccountScreen() {
   );
 
   useEffect(() => {
+    if (!googleSignIn) return;
     // Configure Google Sign-In with Web Client ID from the Google Developer Console
-    GoogleSignin.configure({
+    googleSignIn.GoogleSignin.configure({
       // webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
       offlineAccess: true,
     });
   }, []);
 
   const handleGoogleSignUp = async () => {
+    if (!googleSignIn) {
+      Alert.alert('Not available in Expo Go', 'Google Sign-In requires a development build.');
+      return;
+    }
+    const { GoogleSignin, statusCodes } = googleSignIn;
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
@@ -161,7 +174,7 @@ export default function CreateAccountScreen() {
 
           <View style={styles.loginContainer}>
             <Text style={[{ color: textColor }]}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.replace('/login' as any)}>
+            <TouchableOpacity onPress={() => router.replace('/login')}>
               <Text style={[styles.loginText, { color: purpleText }]}>Sign In</Text>
             </TouchableOpacity>
           </View>
