@@ -7,18 +7,25 @@ EstateHomes is a property management app for landlords and property managers. It
 | [`estate-homes/`](estate-homes/) | Mobile app (iOS, Android, web) | Expo SDK 57, React Native 0.86, Expo Router, TypeScript |
 | [`backend/`](backend/) | REST API | Node.js, Express 5, PostgreSQL (`pg`), JWT auth, TypeScript |
 
+## Demo
+
+Try EstateHomes in your browser, with nothing to install: **[Live demo](https://appetize.io/app/b_gltipn2425evdbjdvxle5rqfpi)**
+
+The demo runs the iOS app in a simulator through Appetize.io.
+
 ## Features
 
 **Mobile app**
 - Onboarding and welcome screens
 - Sign-up flow: phone/email, one-time code, password setup and goals
-- Sign-in screen and Google Sign-In (Google Sign-In needs a development build; see below)
+- Sign-in screen
 - Add-property form with photo upload UI
 - A 5-step add-tenant wizard: personal details, stay details, contact and emergency info, and family details
 - Tabs: **Home**, **Properties** and **Tenants**
 
 **Backend API**
 - Register and log in with bcrypt-hashed passwords and JWTs that expire after 1 day
+- Password reset with emailed 6-digit codes
 - Role-based access (`owner`, `manager`, `tenant`)
 - Create, read, update and delete properties, units and tenants
 - Leases with rent paid in 1–3 installments; creating a lease generates the payment schedule
@@ -48,12 +55,21 @@ DB_NAME=estate_db
 DB_USER=estate_user
 DB_PASSWORD=your_password
 JWT_SECRET=a_long_random_string
+
+# Optional: email for password reset codes.
+# Without these, the code is printed in the server terminal instead.
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_password
+MAIL_FROM="EstateHomes <no-reply@example.com>"
 ```
 
-Set up the database. The migration in [`backend/src/migrations/`](backend/src/migrations/) runs on top of the `users` and `properties` tables:
+Set up the database. The migrations in [`backend/src/migrations/`](backend/src/migrations/) run on top of the `users` and `properties` tables:
 
 ```bash
 psql -h localhost -U estate_user -d estate_db -f src/migrations/001_units_leases_payments.sql
+psql -h localhost -U estate_user -d estate_db -f src/migrations/002_password_resets.sql
 ```
 
 Run the API:
@@ -77,8 +93,6 @@ npx expo start
 2. Scan the QR code: on iOS, use the Camera app; on Android, use Expo Go.
 3. If the phone can't connect, run `npx expo start --tunnel`.
 
-**Google Sign-In** uses native code that Expo Go doesn't include. In Expo Go, the button shows a notice instead. To test it, make a development build with `eas build --profile development`, or with `npx expo run:android` / `npx expo run:ios`.
-
 > To reach the API from a phone, use your computer's LAN IP (for example `http://192.168.x.x:5000/api`). `localhost` on the phone refers to the phone itself.
 
 ## API reference
@@ -90,6 +104,8 @@ All routes start with `/api`. Protected routes need an `Authorization: Bearer <t
 | POST | `/auth/register` | Create an account (`name`, `email`, `password`) |
 | POST | `/auth/login` | Returns a JWT and the user |
 | POST | `/auth/logout` | Log out |
+| POST | `/auth/forgot-password` | Email a 6-digit reset code (`email`); the code expires after 15 minutes |
+| POST | `/auth/reset-password` | Set a new password (`email`, `code`, `password`); a code is locked after 5 wrong tries |
 | GET | `/properties`, `/properties/:id` | List or get properties *(auth)* |
 | POST | `/properties` | Create a property *(owner, manager)* |
 | PATCH | `/properties/:id` | Update a property *(owner, manager)* |
@@ -119,6 +135,7 @@ EstateHomes/
 │       ├── routes/           # Express routers
 │       ├── middleware/       # authenticate (JWT) and authorize (roles)
 │       ├── migrations/       # SQL migrations
+│       ├── utils/mailer.ts   # Email sending (nodemailer)
 │       └── types/            # Express and JWT types
 └── estate-homes/
     ├── app/                  # Expo Router screens
