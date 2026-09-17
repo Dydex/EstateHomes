@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import React, { useState } from "react";
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Image } from "expo-image";
 import {router} from 'expo-router';
-import { FontAwesome } from "@expo/vector-icons";
-import Constants, { ExecutionEnvironment } from "expo-constants";
-
-// Expo Go doesn't include the Google Sign-In native module, so only load it in development/production builds
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-const googleSignIn: typeof import("@react-native-google-signin/google-signin") | null = isExpoGo
-  ? null
-  : // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("@react-native-google-signin/google-signin");
 
 const COUNTRIES = [
   { code: 'US', name: 'United States', flag: '🇺🇸', dialCode: '+1' },
@@ -51,38 +42,6 @@ export default function CreateAccountScreen() {
     country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     country.dialCode.includes(searchQuery)
   );
-
-  useEffect(() => {
-    if (!googleSignIn) return;
-    // Configure Google Sign-In with Web Client ID from the Google Developer Console
-    googleSignIn.GoogleSignin.configure({
-      // webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
-      offlineAccess: true,
-    });
-  }, []);
-
-  const handleGoogleSignUp = async () => {
-    if (!googleSignIn) {
-      Alert.alert('Not available in Expo Go', 'Google Sign-In requires a development build.');
-      return;
-    }
-    const { GoogleSignin, statusCodes } = googleSignIn;
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      console.log('Google User Info:', userInfo);
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('User cancelled Google Sign-In');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Google Sign-In already in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Google Play Services not available or outdated');
-      } else {
-        console.error('Google Sign-In error:', error);
-      }
-    }
-  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
@@ -154,22 +113,6 @@ export default function CreateAccountScreen() {
           {/* Continue Button */}
           <TouchableOpacity style={styles.submitButton} onPress={() => router.replace('/(auth)/otp')}>
             <Text style={styles.submitButtonText}>Create Account</Text>
-          </TouchableOpacity>
-
-          {/* Or Divider */}
-          <View style={styles.orContainer}>
-            <View style={[styles.orLine, { backgroundColor: borderThemeColor }]} />
-            <Text style={[styles.orText, { color: textColor }]}>OR</Text>
-            <View style={[styles.orLine, { backgroundColor: borderThemeColor }]} />
-          </View>
-
-          {/* Google Sign-Up Button */}
-          <TouchableOpacity 
-            style={[styles.googleButton, { borderColor: borderThemeColor }]} 
-            onPress={handleGoogleSignUp}
-          >
-            <FontAwesome name="google" size={20} color="#DB4437" style={styles.googleIcon} />
-            <Text style={[styles.googleButtonText, { color: textColor }]}>Continue with Google</Text>
           </TouchableOpacity>
 
           <View style={styles.loginContainer}>
@@ -373,37 +316,6 @@ const styles = StyleSheet.create({
   countryItemDialCode: {
     fontSize: 16,
     color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  orContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    opacity: 0.5,
-  },
-  orText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    fontWeight: '600',
-    opacity: 0.6,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    height: 52,
-  },
-  googleIcon: {
-    marginRight: 12,
-  },
-  googleButtonText: {
-    fontSize: 16,
     fontWeight: '600',
   },
   loginContainer: {
